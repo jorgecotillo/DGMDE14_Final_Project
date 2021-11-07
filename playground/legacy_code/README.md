@@ -6,3 +6,4 @@
 * Then restore the packages: `pip install -r requirements.txt`
 * Finally run the python script: `python live_stream.py`
 * Go to your browser and paste this link: `http://127.0.0.1:8000`
+* 
