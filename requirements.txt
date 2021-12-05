@@ -1,3 +1,4 @@
 opencv-python==4.4.0.42
 picamera
 picamera[array]
+tensorflow
