@@ -1,10 +1,68 @@
 from picamera import PiCamera
 from picamera.array import PiRGBArray
 import time
-import io
 import cv2
 import numpy as np
-from .facial_expression_model import FacialExpressionModel
+
+from tensorflow.keras.models import model_from_json
+import numpy as np
+import tensorflow as tf
+
+import smtplib
+
+class FacialExpressionModel(object):
+
+    EMOTIONS_LIST = ["Angry", "Disgust",
+                    "Fear", "Happy",
+                    "Neutral", "Sad",
+                    "Surprise", "Tired"]
+
+    def __init__(self, model_json_file, model_weights_file):
+        # load model from JSON file
+        with open(model_json_file, "r") as json_file:
+            loaded_model_json = json_file.read()
+            self.loaded_model = model_from_json(loaded_model_json)
+
+        # load weights into the new model
+        self.loaded_model.load_weights(model_weights_file)
+        self.loaded_model.make_predict_function()
+
+    def predict_emotion(self, img):
+        self.preds = self.loaded_model.predict(img)
+        return FacialExpressionModel.EMOTIONS_LIST[np.argmax(self.preds)]
+
+class EmailNotification(object):
+
+    def send_email(self):
+        # TODO: Use environment variables
+        gmail_user = 'drowsiness.detection.no.reply@gmail.com'
+        gmail_password = 'raspberrypi2021'
+
+        sent_from = gmail_user
+        to = ['jorge.cotillo@gmail.com']
+        subject = 'OMG Super Important Message'
+        body = "Hey, what's up?\n\n- You"
+
+        email_text = """\
+        From: %s
+        To: %s
+        Subject: %s
+
+        %s
+        """ % (sent_from, ", ".join(to), subject, body)
+
+        try:
+            server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+            server.ehlo()
+            server.login(gmail_user, gmail_password)
+            server.sendmail(sent_from, to, email_text)
+            server.close()
+
+            print("Email sent!")
+
+        except Exception as ex:
+            print(ex)
+            print("Something went wrong...")
 
 def main():
     camera =  PiCamera()
@@ -16,7 +74,7 @@ def main():
     time.sleep(0.1)
     
     faceCascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
-    model = FacialExpressionModel("./model.json", "./model_weights.h5")
+    model = FacialExpressionModel("model.json", "model_weights.h5")
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     # Open the camera and start streaming frames
@@ -45,6 +103,8 @@ def main():
 
             # Predict the expression
             expression_prediction = model.predict_emotion(resized_image[np.newaxis, :, :, np.newaxis])
+
+            print(expression_prediction)
             
             cv2.putText(image, expression_prediction, (x, y), font, 1, (255, 255, 0), 2)
             cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),2)
