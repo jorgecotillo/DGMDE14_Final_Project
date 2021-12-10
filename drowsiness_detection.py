@@ -33,15 +33,15 @@ class FacialExpressionModel(object):
 
 class EmailNotification(object):
 
-    def send_email(self):
+    def send_email(self, to_email):
         # TODO: Use environment variables
         gmail_user = 'drowsiness.detection.no.reply@gmail.com'
         gmail_password = 'raspberrypi2021'
 
         sent_from = gmail_user
-        to = ['jorge.cotillo@gmail.com']
-        subject = 'OMG Super Important Message'
-        body = "Hey, what's up?\n\n- You"
+        to = [to_email]
+        subject = 'Please wake up!'
+        body = "Hey, you need to wake up please!!"
 
         email_text = """\
         From: %s
@@ -104,7 +104,15 @@ def main():
             # Predict the expression
             expression_prediction = model.predict_emotion(resized_image[np.newaxis, :, :, np.newaxis])
 
-            print(expression_prediction)
+            # Notification section
+            if expression_prediction.lower() == 'tired':
+
+                # Email notification
+                email_notification = EmailNotification()
+                email_notification.send_email('jorge.cotillo@gmail.com')
+
+                # Play sound notification
+                # TODO: Fill out this part
             
             cv2.putText(image, expression_prediction, (x, y), font, 1, (255, 255, 0), 2)
             cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),2)
