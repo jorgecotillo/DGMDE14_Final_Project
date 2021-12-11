@@ -1,7 +1,10 @@
-import cv2; from scipy.spatial import distance
+import cv2
+from scipy.spatial import distance
 from mlxtend.image import extract_face_landmarks
-import os; import numpy as np
+import os
+import numpy as np
 from random import sample
+
 DESIRED_HEIGHT = 128
 DESIRED_WIDTH = 128
 capture = False
@@ -36,43 +39,47 @@ def is_mouth_closed(data):
   # print(dis)
   return True if dis <= 100 else False
 
-if not os.path.exists("C:\\Users\\nanda\\Documents\\harvard\\DGMDE14\\Final_Project\\sample_data\\texas_uofta_dataset\\process_data\\drowsy"):
-  os.mkdir("C:\\Users\\nanda\\Documents\\harvard\\DGMDE14\\Final_Project\\sample_data\\texas_uofta_dataset\\process_data\\drowsy",777)
 # For webcam input:
-root_path = "C:\\Users\\nanda\\Documents\\harvard\\DGMDE14\\Final_Project\\sample_data\\texas_uofta_dataset\\raw_unzip\\"
-num=0
-final_num = 0
-# list_folder = sample(os.listdir(root_path),len(os.listdir(root_path)))
-list_folder = os.listdir(root_path)
-while final_num<621:
-  for folder in list_folder:
-    if final_num>=621:
+root_path = os.path.abspath('../videos')
+extracted_images_path = os.join(root_path, 'extracted_images')
+num = 0
+current_number_of_pictures = 0
+max_number_of_pictures = 2000
+videos_folder = os.listdir(root_path)
+
+while current_number_of_pictures < max_number_of_pictures:
+  for video_folder in videos_folder:
+    if current_number_of_pictures >= max_number_of_pictures:
       break
-    # list_foldNumber = sample(os.listdir(root_path+'\\'+folder),len(os.listdir(root_path+'\\'+folder)))
-    list_foldNumber = sample(os.listdir(root_path+'\\'+folder),len(os.listdir(root_path+'\\'+folder)))
-    for foldNumber in list_foldNumber:
-      if final_num>=621:
+    
+    video_path = os.path.join(root_path, video_folder)
+
+    # sample_video_path is a folder containing all videos to capture
+    # using this folder structure to comply with another big dataset
+    # we have
+    for sample_video_folder_path in os.listdir(video_path):
+      if current_number_of_pictures >= max_number_of_pictures:
         break
-      # if foldNumber=='03':
-      #   print('Skipping {} folder at {} folder number'.format(folder,foldNumber))
-      #   continue
-      # for i in VIDEO_NUMBER_OF_INTEREST:
-      last_path = os.path.join(root_path,folder,foldNumber)
-      list_filename = os.listdir(last_path)
-      for name in list_filename:
-        if final_num>=2000:
+      
+      sample_video_path = os.path.join(video_path, sample_video_folder_path)
+      sample_video_file_names = os.listdir(sample_video_path)
+
+      for sample_video_file_name in sample_video_file_names:
+        if current_number_of_pictures >= max_number_of_pictures:
           break
-        # path= os.path.join(root_path,folder,foldNumber,str(i)+'.MOV')
-        path= os.path.join(root_path,folder,foldNumber,name)
-        wantplot=False
-        vid = cv2.VideoCapture(path)
-        count=0
+        
+        sample_video_file_path = os.path.join(sample_video_path, sample_video_file_name)
+        wantplot = False
+        vid = cv2.VideoCapture(sample_video_file_path)
+        images_captured_count = 0
+        max_images_to_capture = 1000
         sec = 0
         success,img = get_frame(sec)
-        while success and count <= 500 and final_num<=2000:
+
+        while success and images_captured_count <= max_images_to_capture and current_number_of_pictures <= max_number_of_pictures:
           landmark = extract_face_landmarks(img)
           try:
-            if MOUTH_OR_EYE=='eye':  
+            if MOUTH_OR_EYE=='eye': 
               is_drowsy = is_eye_closed(landmark[36:48,1])
             elif MOUTH_OR_EYE=='mouth':
               is_drowsy = is_mouth_closed(landmark[48:88,1])
@@ -81,23 +88,28 @@ while final_num<621:
             if wantplot:
               import matplotlib.pyplot as plt
               plt.imshow(img)
-              print("Error at count = {} at time equals {} seconds".format(count,sec))
+              print("Error at count = {} at time equals {} seconds".format(images_captured_count,sec))
               plt.show()
               wantplot = False
               is_drowsy = False
             else:
-              print("Error at count = {} at time equals {} seconds".format(count,sec))
+              print("Error at count = {} at time equals {} seconds".format(images_captured_count,sec))
               is_drowsy = False
+
           if is_drowsy:
             gray_img = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
-            cv2.imwrite(os.path.join('C:\\Users\\nanda\\Documents\\harvard\\DGMDE14\\Final_Project\\sample_data\\texas_uofta_dataset\\process_data\\drowsy\\',str(num)+'.jpg'),gray_img)
-            num+=1
-            final_num+=1
-          count +=1
-          sec = sec + 1
+            import datetime
+            now = datetime.now()
+            file_name = "{0}_{1}.jpg".format(now.strftime("%m_%d_%Y_%H%M%S%f"), num)
+            cv2.imwrite(os.path.join(extracted_images_path, file_name),gray_img)
+            num += 1
+            current_number_of_pictures += 1
+          images_captured_count += 1
+          sec += 1
           sec = round(sec,2)
+
           if sec%100==0:
-            print('Video steaming at --> {} seconds\n Folder = {}\n folder number = {}'.format(sec,folder,foldNumber))
+            print('Video steaming at --> {} seconds\n Folder = {}\n folder number = {}'.format(sec, sample_video_path , sample_video_file_path))
           success,img = get_frame(sec)
 
   vid.release()
