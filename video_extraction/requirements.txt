@@ -4,3 +4,4 @@ mlxtend
 numpy
 dlib
 imageio
+scikit-image

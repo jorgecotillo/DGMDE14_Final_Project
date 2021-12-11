@@ -17,9 +17,9 @@ def resize(image):
   return img
 
 def get_frame(sec):
-  start = 0
+  start = 1
   # Capture frames every 150 ms
-  vid.set(cv2.CAP_PROP_POS_MSEC,start+sec*150)
+  vid.set(cv2.CAP_PROP_POS_MSEC,start+sec*70)
   frames,image = vid.read()
   return frames,image
 
@@ -41,19 +41,24 @@ def is_mouth_closed(data):
   return True if dis <= 100 else False
 
 # For webcam input:
-root_path = os.path.abspath('../videos')
-extracted_images_path = os.join(root_path, 'extracted_images')
+dir_path = os.path.dirname(os.path.realpath(__file__))
+videos_root_path = os.path.abspath(os.path.join(dir_path, 'videos'))
+extracted_images_path = os.path.join(videos_root_path, 'extracted_images')
 num = 0
 current_number_of_pictures = 0
 max_number_of_pictures = 2000
-videos_folder = os.listdir(root_path)
+videos_folder = os.listdir(videos_root_path)
 
 while current_number_of_pictures < max_number_of_pictures:
   for video_folder in videos_folder:
+
+    video_path = os.path.join(videos_root_path, video_folder)
+
+    if not os.path.isdir(video_path):
+      continue
+
     if current_number_of_pictures >= max_number_of_pictures:
       break
-    
-    video_path = os.path.join(root_path, video_folder)
 
     # sample_video_path is a folder containing all videos to capture
     # using this folder structure to comply with another big dataset
@@ -63,9 +68,17 @@ while current_number_of_pictures < max_number_of_pictures:
         break
       
       sample_video_path = os.path.join(video_path, sample_video_folder_path)
+
+      if not os.path.isdir(sample_video_path):
+        continue
+
       sample_video_file_names = os.listdir(sample_video_path)
 
       for sample_video_file_name in sample_video_file_names:
+        # Exclude any file that is not an mp4 file
+        if not sample_video_file_name.endswith('mp4'):
+          continue
+
         if current_number_of_pictures >= max_number_of_pictures:
           break
         
