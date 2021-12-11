@@ -18,7 +18,8 @@ def resize(image):
 
 def get_frame(sec):
   start = 0
-  vid.set(cv2.CAP_PROP_POS_MSEC,start+sec*70)
+  # Capture frames every 150 ms
+  vid.set(cv2.CAP_PROP_POS_MSEC,start+sec*150)
   frames,image = vid.read()
   return frames,image
 
