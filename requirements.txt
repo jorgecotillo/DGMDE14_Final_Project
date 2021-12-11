@@ -3,3 +3,5 @@ picamera
 picamera[array]
 tensorflow
 playsound
+gst
+pygobject

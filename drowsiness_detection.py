@@ -109,15 +109,19 @@ def main():
             expression_prediction = model.predict_emotion(resized_image[np.newaxis, :, :, np.newaxis])
 
             # Notification section
-            if expression_prediction.lower() == 'tired':
+            if expression_prediction.lower() == 'neutral':
 
                 # Email notification
                 email_notification = EmailNotification()
                 email_notification.send_email('jorge.cotillo@gmail.com')
 
                 # Play sound notification
-                from playsound import playsound
-                playsound(wake_up_sound_path)
+                import pygame
+                pygame.mixer.init()
+                pygame.mixer.music.load(wake_up_sound_path)
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy() == True:
+                    continue
             
             cv2.putText(image, expression_prediction, (x, y), font, 1, (255, 255, 0), 2)
             cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),2)
