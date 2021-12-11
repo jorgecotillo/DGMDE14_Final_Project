@@ -10,6 +10,10 @@ import tensorflow as tf
 
 import smtplib
 
+import os
+
+wake_up_sound_path = os.path.abspath('wake_up.mp3')
+
 class FacialExpressionModel(object):
 
     EMOTIONS_LIST = ["Angry", "Disgust",
@@ -112,7 +116,8 @@ def main():
                 email_notification.send_email('jorge.cotillo@gmail.com')
 
                 # Play sound notification
-                # TODO: Fill out this part
+                from playsound import playsound
+                playsound(wake_up_sound_path)
             
             cv2.putText(image, expression_prediction, (x, y), font, 1, (255, 255, 0), 2)
             cv2.rectangle(image,(x,y),(x+w,y+h),(255,0,0),2)
