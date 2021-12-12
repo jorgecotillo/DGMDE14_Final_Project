@@ -11,28 +11,32 @@ import tensorflow as tf
 import smtplib
 
 import os
+import joblib
+
+from scipy.spatial import distance
+
+import math
 
 wake_up_sound_path = os.path.abspath('wake_up.mp3')
 
 class FacialExpressionModel(object):
 
-    EMOTIONS_LIST = ["Angry", "Disgust",
-                    "Fear", "Happy",
-                    "Neutral", "Sad",
-                    "Surprise", "Tired"]
+    EMOTIONS_LIST = ["Alert", "Tired"]
 
-    def __init__(self, model_json_file, model_weights_file):
+    def __init__(self, model_json_file, model_weights_file):        
+        self.knn_model = joblib.load('knn.pkl')
         # load model from JSON file
-        with open(model_json_file, "r") as json_file:
-            loaded_model_json = json_file.read()
-            self.loaded_model = model_from_json(loaded_model_json)
+        # with open(model_json_file, "r") as json_file:
+        #    loaded_model_json = json_file.read()
+        #    self.loaded_model = model_from_json(loaded_model_json)
 
         # load weights into the new model
-        self.loaded_model.load_weights(model_weights_file)
-        self.loaded_model.make_predict_function()
+        # self.loaded_model.load_weights(model_weights_file)
+        # self.loaded_model.make_predict_function()
 
-    def predict_emotion(self, img):
-        self.preds = self.loaded_model.predict(img)
+    def predict_emotion(self, features):
+        self.preds = self.knn_model.predict(features)
+        print(self.preds)
         return FacialExpressionModel.EMOTIONS_LIST[np.argmax(self.preds)]
 
 class EmailNotification(object):
@@ -67,6 +71,38 @@ class EmailNotification(object):
         except Exception as ex:
             print(ex)
             print("Something went wrong...")
+
+def eye_aspect_ratio(eye):
+    A = distance.euclidean(eye[1], eye[5])
+    B = distance.euclidean(eye[2], eye[4])
+    C = distance.euclidean(eye[0], eye[3])
+    ear = (A + B) / (2.0 * C)
+    return ear
+
+def mouth_aspect_ratio(mouth):
+    A = distance.euclidean(mouth[14], mouth[18])
+    C = distance.euclidean(mouth[12], mouth[16])
+    mar = (A ) / (C)
+    return mar
+
+def circularity(eye):
+    A = distance.euclidean(eye[1], eye[4])
+    radius  = A/2.0
+    Area = math.pi * (radius ** 2)
+    p = 0
+    p += distance.euclidean(eye[0], eye[1])
+    p += distance.euclidean(eye[1], eye[2])
+    p += distance.euclidean(eye[2], eye[3])
+    p += distance.euclidean(eye[3], eye[4])
+    p += distance.euclidean(eye[4], eye[5])
+    p += distance.euclidean(eye[5], eye[0])
+    return 4 * math.pi * Area /(p**2)
+
+def mouth_over_eye(eye):
+    ear = eye_aspect_ratio(eye)
+    mar = mouth_aspect_ratio(eye)
+    mouth_eye = mar/ear
+    return mouth_eye
 
 def main():
     camera =  PiCamera()
@@ -103,10 +139,24 @@ def main():
             face = gray_frame[y:y+h, x:x+w]
 
             # Resize image - our training model was done in 48x48 pixels
-            resized_image = cv2.resize(face, (48, 48))
+            resized_image = cv2.resize(face, (256, 256))
+
+            # Extract landmarks
+            landmarks = extract_face_landmarks(resized_image)
+            data = [landmarks]
+            data = np.array(data)
+
+            features = []
+            for d in data:
+                eye = d[36:68]
+                ear = eye_aspect_ratio(eye)
+                mar = mouth_aspect_ratio(eye)
+                cir = circularity(eye)
+                mouth_eye = mouth_over_eye(eye)
+                features.append([ear, mar, cir, mouth_eye])
 
             # Predict the expression
-            expression_prediction = model.predict_emotion(resized_image[np.newaxis, :, :, np.newaxis])
+            expression_prediction = model.predict_emotion(features)
 
             # Notification section
             if expression_prediction.lower() == 'neutral':
