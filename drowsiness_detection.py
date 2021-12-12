@@ -17,22 +17,16 @@ from scipy.spatial import distance
 
 import math
 
+from mlxtend.image import extract_face_landmarks
+
 wake_up_sound_path = os.path.abspath('wake_up.mp3')
 
 class FacialExpressionModel(object):
 
     EMOTIONS_LIST = ["Alert", "Tired"]
 
-    def __init__(self, model_json_file, model_weights_file):        
+    def __init__(self):        
         self.knn_model = joblib.load('knn.pkl')
-        # load model from JSON file
-        # with open(model_json_file, "r") as json_file:
-        #    loaded_model_json = json_file.read()
-        #    self.loaded_model = model_from_json(loaded_model_json)
-
-        # load weights into the new model
-        # self.loaded_model.load_weights(model_weights_file)
-        # self.loaded_model.make_predict_function()
 
     def predict_emotion(self, features):
         self.preds = self.knn_model.predict(features)
@@ -114,7 +108,7 @@ def main():
     time.sleep(0.1)
     
     faceCascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
-    model = FacialExpressionModel("model.json", "model_weights.h5")
+    model = FacialExpressionModel()
     font = cv2.FONT_HERSHEY_SIMPLEX
 
     # Open the camera and start streaming frames
