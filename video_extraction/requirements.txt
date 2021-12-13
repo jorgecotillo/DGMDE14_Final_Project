@@ -1,0 +1,7 @@
+scikit-build
+opencv-python==4.4.0.42
+mlxtend
+numpy
+dlib
+imageio
+scikit-image
