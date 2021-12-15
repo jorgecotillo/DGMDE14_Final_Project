@@ -1,0 +1,2 @@
+drag and concat all the split files to one ".dat" file 
+run the code "python detect_drowsiness_rv2.py --shape-predictor <new concat file>.dat --alarm alarm.wav"
